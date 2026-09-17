@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2026 alibaba/open-code-review Contributors
 
-package diff
+package diff_test
 
 import (
 	"context"
@@ -9,7 +9,9 @@ import (
 	"testing"
 
 	"github.com/alibaba/open-code-review/internal/config/template"
+	"github.com/alibaba/open-code-review/internal/diff"
 	"github.com/alibaba/open-code-review/internal/llm"
+	"github.com/alibaba/open-code-review/internal/llmrelocation"
 	"github.com/alibaba/open-code-review/internal/model"
 )
 
@@ -64,7 +66,7 @@ func TestResolveComment_TextMatchSuccess(t *testing.T) {
 	}
 	d := makeDiff()
 
-	ok := ResolveComment(&cm, d)
+	ok := diff.ResolveComment(&cm, d)
 	if !ok {
 		t.Fatal("expected ResolveComment to succeed")
 	}
@@ -82,7 +84,7 @@ func TestResolveComment_AlreadyResolved(t *testing.T) {
 		EndLine:      10,
 	}
 	d := makeDiff()
-	ok := ResolveComment(&cm, d)
+	ok := diff.ResolveComment(&cm, d)
 	if !ok {
 		t.Fatal("expected true for already-resolved comment")
 	}
@@ -94,7 +96,7 @@ func TestResolveComment_AlreadyResolved(t *testing.T) {
 func TestResolveComment_EmptyExistingCode(t *testing.T) {
 	cm := model.LlmComment{Path: "main.go", Content: "test"}
 	d := makeDiff()
-	ok := ResolveComment(&cm, d)
+	ok := diff.ResolveComment(&cm, d)
 	if ok {
 		t.Fatal("expected false for empty ExistingCode")
 	}
@@ -112,12 +114,12 @@ func TestReLocateComment_LLMReturnsValidCode(t *testing.T) {
 		response: newMockResponse("Here is the code:\n```go\nx := 1\ny := 2\n```\n"),
 	}
 
-	msgs := BuildReLocationMessages(&cm, d, makeTask())
+	msgs := llmrelocation.BuildReLocationMessages(&cm, d, makeTask())
 	if len(msgs) == 0 {
 		t.Fatal("expected non-empty messages")
 	}
 
-	ok, resp := ReLocateComment(context.Background(), &cm, d, client, msgs, "test-model", 1000)
+	ok, resp := llmrelocation.ReLocateComment(context.Background(), &cm, d, client, msgs, "test-model", 1000)
 	if !ok {
 		t.Fatal("expected re-location to succeed")
 	}
@@ -141,7 +143,7 @@ func TestReLocateComment_LLMReturnsInvalidContent(t *testing.T) {
 		response: newMockResponse("I cannot find the code."),
 	}
 
-	ok, resp := ReLocateComment(context.Background(), &cm, d, client, BuildReLocationMessages(&cm, d, makeTask()), "test-model", 1000)
+	ok, resp := llmrelocation.ReLocateComment(context.Background(), &cm, d, client, llmrelocation.BuildReLocationMessages(&cm, d, makeTask()), "test-model", 1000)
 	if ok {
 		t.Fatal("expected re-location to fail for invalid LLM response")
 	}
@@ -163,7 +165,7 @@ func TestReLocateComment_LLMError(t *testing.T) {
 
 	client := &mockLLMClient{err: errors.New("network error")}
 
-	ok, resp := ReLocateComment(context.Background(), &cm, d, client, BuildReLocationMessages(&cm, d, makeTask()), "test-model", 1000)
+	ok, resp := llmrelocation.ReLocateComment(context.Background(), &cm, d, client, llmrelocation.BuildReLocationMessages(&cm, d, makeTask()), "test-model", 1000)
 	if ok {
 		t.Fatal("expected false on LLM error")
 	}
@@ -189,7 +191,7 @@ func TestBuildReLocationMessages_Rendering(t *testing.T) {
 		},
 	}
 
-	msgs := BuildReLocationMessages(&cm, d, task)
+	msgs := llmrelocation.BuildReLocationMessages(&cm, d, task)
 	if len(msgs) != 2 {
 		t.Fatalf("got %d messages, want 2", len(msgs))
 	}
@@ -210,10 +212,10 @@ func TestBuildReLocationMessages_NilOrEmptyTask(t *testing.T) {
 	}
 	d := makeDiff()
 
-	if msgs := BuildReLocationMessages(&cm, d, nil); msgs != nil {
+	if msgs := llmrelocation.BuildReLocationMessages(&cm, d, nil); msgs != nil {
 		t.Fatalf("expected nil messages for nil task, got %d", len(msgs))
 	}
-	if msgs := BuildReLocationMessages(&cm, d, &template.LlmConversation{}); msgs != nil {
+	if msgs := llmrelocation.BuildReLocationMessages(&cm, d, &template.LlmConversation{}); msgs != nil {
 		t.Fatalf("expected nil messages for task without messages, got %d", len(msgs))
 	}
 }
@@ -234,7 +236,7 @@ func TestReLocateComment_CodeBlockStillUnresolvable(t *testing.T) {
 		response: newMockResponse("```go\nnot in the diff either\n```"),
 	}
 
-	ok, resp := ReLocateComment(context.Background(), &cm, d, client, BuildReLocationMessages(&cm, d, makeTask()), "test-model", 1000)
+	ok, resp := llmrelocation.ReLocateComment(context.Background(), &cm, d, client, llmrelocation.BuildReLocationMessages(&cm, d, makeTask()), "test-model", 1000)
 	if ok {
 		t.Fatal("expected false when the new snippet still does not match")
 	}
@@ -260,7 +262,7 @@ func TestReLocateComment_NoMessages(t *testing.T) {
 	d := makeDiff()
 	client := &mockLLMClient{response: newMockResponse("```go\nx := 1\n```")}
 
-	ok, resp := ReLocateComment(context.Background(), &cm, d, client, nil, "test-model", 1000)
+	ok, resp := llmrelocation.ReLocateComment(context.Background(), &cm, d, client, nil, "test-model", 1000)
 	if ok {
 		t.Fatal("expected false when there are no messages")
 	}
@@ -269,29 +271,5 @@ func TestReLocateComment_NoMessages(t *testing.T) {
 	}
 	if client.callCount != 0 {
 		t.Fatalf("expected no LLM call, got %d", client.callCount)
-	}
-}
-
-func TestExtractCodeBlock(t *testing.T) {
-	tests := []struct {
-		name  string
-		input string
-		want  string
-	}{
-		{"with language tag", "```go\nfoo\nbar\n```", "foo\nbar"},
-		{"without language tag", "```\nfoo\n```", "foo"},
-		{"with surrounding text", "Here:\n```\ncode\n```\ndone", "code"},
-		{"no code block", "just text", ""},
-		{"empty block", "```\n```", ""},
-		{"opening fence without newline", "```go", ""},
-		{"no closing fence", "```\nfoo\nbar", ""},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := extractCodeBlock(tt.input)
-			if got != tt.want {
-				t.Errorf("extractCodeBlock() = %q, want %q", got, tt.want)
-			}
-		})
 	}
 }

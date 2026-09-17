@@ -368,7 +368,7 @@ template override — see [Tools](../tools/#customizing-tools).
 > **Placeholder syntax caveat.** All the placeholders above use
 > double-brace `{{…}}` syntax *except* `RE_LOCATION_TASK`, which
 > substitutes single-brace `{diff}`, `{existing_code}`, and
-> `{suggestion_content}` (see `internal/diff/relocation.go`).
+> `{suggestion_content}` (see `internal/llmrelocation/relocation.go`).
 
 ## Persistence
 

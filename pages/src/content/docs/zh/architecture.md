@@ -299,7 +299,7 @@ if countMessagesTokens(messages) > tokenLimit {
 > **占位符语法注意。** 以上所有占位符都使用双花括号
 > `{{…}}` 语法，*除了* `RE_LOCATION_TASK`，它替换单花括号
 > 的 `{diff}`、`{existing_code}` 和 `{suggestion_content}`
-> （见 `internal/diff/relocation.go`）。
+> （见 `internal/llmrelocation/relocation.go`）。
 
 ## 持久化
 

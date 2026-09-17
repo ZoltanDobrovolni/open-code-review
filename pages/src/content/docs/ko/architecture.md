@@ -354,7 +354,7 @@ OCR은 이 검사로 괴물 같은 diff(자동 생성된 lock 파일, 수천 줄
 > **플레이스홀더 문법 주의.** 위의 플레이스홀더는 모두 중괄호 두 개
 > `{{…}}` 문법을 쓰지만 `RE_LOCATION_TASK`만 예외입니다. 여기서는 중괄호
 > 하나짜리 `{diff}`, `{existing_code}`, `{suggestion_content}`를 치환합니다
-> (`internal/diff/relocation.go` 참고).
+> (`internal/llmrelocation/relocation.go` 참고).
 
 ## 저장 {#persistence}
 

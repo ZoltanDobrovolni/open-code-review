@@ -364,7 +364,7 @@ if countMessagesTokens(messages) > tokenLimit {
 > **Особенность синтаксиса плейсхолдеров.** Все перечисленные выше плейсхолдеры
 > используют двойные фигурные скобки `{{…}}`, **кроме** `RE_LOCATION_TASK`,
 > который подставляет значения в одинарные скобки `{diff}`, `{existing_code}`
-> и `{suggestion_content}` (см. `internal/diff/relocation.go`).
+> и `{suggestion_content}` (см. `internal/llmrelocation/relocation.go`).
 
 ## Хранение данных
 

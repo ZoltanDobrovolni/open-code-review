@@ -11,11 +11,17 @@
     "scripts/update.js",
     "scripts/version.js",
     "scripts/platform.js",
+    "scripts/check-ocr-local-deps.js",
+    "scripts/create-ocr-local-manifest.js",
+    "scripts/run-ocr-local.js",
+    "skills/open-code-review-copilot/",
     "imgs/"
   ],
   "scripts": {
     "postinstall": "node scripts/install.js",
     "test:github-actions": "node scripts/github-actions/post-review-comments.test.js && node scripts/github-actions/check-translation-sync.test.js && node scripts/github-actions/action-contract.test.js && node scripts/github-actions/check-plugin-contract.test.js",
+    "test:local": "node scripts/ocr-local.test.js",
+    "check:local-deps": "node scripts/check-ocr-local-deps.js",
     "test:update": "node scripts/version.test.js",
     "test:launcher": "node bin/ocr.test.js"
   },

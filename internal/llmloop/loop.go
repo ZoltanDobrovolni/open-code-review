@@ -15,6 +15,7 @@ import (
 	"github.com/alibaba/open-code-review/internal/config/template"
 	"github.com/alibaba/open-code-review/internal/diff"
 	"github.com/alibaba/open-code-review/internal/llm"
+	"github.com/alibaba/open-code-review/internal/llmrelocation"
 	"github.com/alibaba/open-code-review/internal/model"
 	"github.com/alibaba/open-code-review/internal/session"
 	"github.com/alibaba/open-code-review/internal/stdout"
@@ -696,7 +697,7 @@ func (r *Runner) executeToolCall(ctx context.Context, taskKey string, call llm.T
 						// itself — moving it would silently change what
 						// TaskRecord.Duration measures.
 						rlStart := time.Now()
-						msgs := diff.BuildReLocationMessages(cm, d, r.deps.Template.ReLocationTask)
+						msgs := llmrelocation.BuildReLocationMessages(cm, d, r.deps.Template.ReLocationTask)
 						if len(msgs) > 0 {
 							fs := r.deps.Session.GetOrCreateFileSession(cm.Path)
 							rlRec := fs.AppendTaskRecord(session.ReLocationTask, msgs)
@@ -710,7 +711,7 @@ func (r *Runner) executeToolCall(ctx context.Context, taskKey string, call llm.T
 							rlCtx := llm.ContextWithSessionKey(rctx,
 								llm.SessionTaskKey(r.deps.Session.SessionID, string(session.ReLocationTask), cm.Path))
 							reqCtx := r.requestCtx(rlCtx, cm.Path, session.ReLocationTask, rlRec.RequestNo)
-							_, resp := diff.ReLocateComment(reqCtx, cm, d, r.deps.LLMClient, msgs, r.deps.Model, r.deps.Template.CompletionTokenLimit())
+							_, resp := llmrelocation.ReLocateComment(reqCtx, cm, d, r.deps.LLMClient, msgs, r.deps.Model, r.deps.Template.CompletionTokenLimit())
 							if resp != nil {
 								rlRec.SetResponse(resp, time.Since(rlStart))
 								if resp.Usage != nil {

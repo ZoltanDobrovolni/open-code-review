@@ -5,6 +5,7 @@
 *.iws
 
 dist/
+.ocr-local/
 npm/*/bin/
 coverage.out
 coverage.html

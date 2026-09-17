@@ -1,5 +1,5 @@
 .PHONY: build test clean run help fmt vet check coverage \
-	build-all dist sha256sum version-info \
+	build-all build-local dist sha256sum version-info \
 	build-linux-amd64 build-linux-arm64 build-darwin-amd64 build-darwin-arm64 \
 	build-windows-amd64 build-windows-arm64 \
 	license-check license-add english-check
@@ -31,6 +31,9 @@ endef
 # ── Development targets ──────────────────────────────────────────────────────
 build:
 	$(GO) build -ldflags "$(LD_FLAGS)" -o $(DIST_DIR)/$(BINARY_NAME) ./cmd/opencodereview
+
+build-local:
+	$(GO) build -ldflags "-X main.Version=$(VERSION)" -o $(DIST_DIR)/ocr-local ./cmd/ocr-local
 
 # No node_modules filter is needed for the docs site: pages/go.mod puts it in a
 # module of its own, so `go list ./...` skips that subtree entirely -- see that
